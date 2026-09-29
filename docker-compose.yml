@@ -1,0 +1,17 @@
+services:
+  crm:
+    build: .
+    restart: unless-stopped
+    environment:
+      # Mantenha "true" em produção (exige HTTPS). Use "false" só para testar localmente sem HTTPS.
+      COOKIE_SECURE: "true"
+      # Número de proxies reversos na frente da aplicação (ex.: Caddy/Nginx = 1).
+      TRUST_PROXY: "1"
+    volumes:
+      - crm-data:/app/data
+    # Exposto apenas na máquina local; publique via proxy reverso com HTTPS.
+    ports:
+      - "127.0.0.1:3000:3000"
+
+volumes:
+  crm-data:

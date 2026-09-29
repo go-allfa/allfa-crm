@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Allfa CRM · Vendas</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <!-- Login -->
+  <main id="login-view" class="login" hidden>
+    <form id="login-form" class="login-card" autocomplete="on">
+      <h1>Allfa CRM</h1>
+      <p class="muted">Acompanhamento de vendas · acesso interno</p>
+      <label>E-mail
+        <input name="email" type="email" required autocomplete="username" maxlength="200">
+      </label>
+      <label>Senha
+        <input name="password" type="password" required autocomplete="current-password" maxlength="200">
+      </label>
+      <p class="error" id="login-error" role="alert"></p>
+      <button type="submit" class="primary">Entrar</button>
+    </form>
+  </main>
+
+  <!-- Quadro -->
+  <div id="app-view" hidden>
+    <header class="topbar">
+      <h1>Allfa CRM <span class="muted">· Vendas</span></h1>
+      <div class="toolbar">
+        <input id="search" type="search" placeholder="Buscar nome, loja, telefone…" aria-label="Buscar">
+        <select id="filter-method" aria-label="Filtrar por forma de contato">
+          <option value="">Todas as formas de contato</option>
+        </select>
+        <button id="new-lead" class="primary">+ Novo contato</button>
+      </div>
+      <div class="user-menu">
+        <span id="user-name"></span>
+        <button id="open-users" class="link" hidden>Usuários</button>
+        <button id="open-password" class="link">Trocar senha</button>
+        <button id="logout" class="link">Sair</button>
+      </div>
+    </header>
+    <main id="board" class="board"></main>
+  </div>
+
+  <!-- Modal de contato -->
+  <dialog id="lead-dialog">
+    <form id="lead-form" method="dialog">
+      <h2 id="lead-title">Novo contato</h2>
+      <div class="grid">
+        <label class="full">Nome *
+          <input name="name" required maxlength="120">
+        </label>
+        <label>Telefone
+          <input name="phone" type="tel" maxlength="30" placeholder="(11) 99999-9999">
+        </label>
+        <label>Loja
+          <input name="store" maxlength="120">
+        </label>
+        <label class="full">LinkedIn
+          <input name="linkedin" maxlength="300" placeholder="https://www.linkedin.com/in/...">
+        </label>
+        <label>Como foi feito o contato *
+          <select name="contact_method" required></select>
+        </label>
+        <label>Status
+          <select name="status"></select>
+        </label>
+        <label class="full">Observações
+          <textarea name="notes" rows="4" maxlength="2000"></textarea>
+        </label>
+      </div>
+      <details id="lead-history" hidden>
+        <summary>Histórico</summary>
+        <ul></ul>
+      </details>
+      <p class="error" id="lead-error" role="alert"></p>
+      <div class="actions">
+        <button type="button" id="delete-lead" class="danger" hidden>Excluir</button>
+        <span class="spacer"></span>
+        <button type="button" data-close>Cancelar</button>
+        <button type="submit" class="primary">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Modal trocar senha -->
+  <dialog id="password-dialog">
+    <form id="password-form" method="dialog">
+      <h2>Trocar senha</h2>
+      <label>Senha atual
+        <input name="currentPassword" type="password" required autocomplete="current-password">
+      </label>
+      <label>Nova senha (mín. 10 caracteres)
+        <input name="newPassword" type="password" required minlength="10" autocomplete="new-password">
+      </label>
+      <p class="error" role="alert"></p>
+      <div class="actions">
+        <span class="spacer"></span>
+        <button type="button" data-close>Cancelar</button>
+        <button type="submit" class="primary">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Modal usuários (admin) -->
+  <dialog id="users-dialog">
+    <div class="users-body">
+      <h2>Usuários</h2>
+      <table>
+        <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th></th></tr></thead>
+        <tbody id="users-list"></tbody>
+      </table>
+      <form id="user-form">
+        <h3>Adicionar usuário</h3>
+        <div class="grid">
+          <label>Nome <input name="name" required maxlength="120"></label>
+          <label>E-mail <input name="email" type="email" required maxlength="200"></label>
+          <label>Senha inicial <input name="password" type="password" required minlength="10" autocomplete="new-password"></label>
+          <label class="checkbox"><input name="isAdmin" type="checkbox"> Administrador</label>
+        </div>
+        <p class="error" role="alert"></p>
+        <div class="actions">
+          <span class="spacer"></span>
+          <button type="button" data-close>Fechar</button>
+          <button type="submit" class="primary">Adicionar</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+</body>
+</html>

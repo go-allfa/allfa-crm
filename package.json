@@ -1,0 +1,18 @@
+{
+  "name": "allfa-crm",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Kanban simples para acompanhamento de contatos e negociações da área de vendas.",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning src/server.js",
+    "create-user": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning scripts/create-user.js",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
