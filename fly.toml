@@ -1,0 +1,30 @@
+# Deploy no Fly.io: fly launch --copy-config --no-deploy && fly volumes create crm_data --size 1 --region gru && fly deploy
+# SQLite exige UMA única máquina (não escale horizontalmente).
+app = "allfa-crm"
+primary_region = "gru"
+
+[build]
+
+[env]
+  NODE_ENV = "production"
+  HOST = "0.0.0.0"
+  PORT = "3000"
+  DB_PATH = "/app/data/crm.sqlite"
+  COOKIE_SECURE = "true"
+  # O proxy do Fly fica na frente da aplicação.
+  TRUST_PROXY = "1"
+
+[[mounts]]
+  source = "crm_data"
+  destination = "/app/data"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

@@ -48,7 +48,7 @@ Recomendado: Docker atrás de um proxy reverso com HTTPS (Caddy, Nginx, Traefik,
 
 ```bash
 docker compose up -d --build
-docker compose exec crm node scripts/create-user.js --admin   # primeiro admin
+docker compose exec -u node crm node scripts/create-user.js --admin   # primeiro admin
 ```
 
 O `docker-compose.yml` publica a porta **apenas em 127.0.0.1:3000**; exponha para fora somente via proxy HTTPS.
@@ -80,3 +80,15 @@ Recomendações extras para manter o acesso só interno:
 
 - Pela tela: botão **Usuários** (visível para administradores) → adicionar / desativar / reativar.
 - Pelo terminal: `npm run create-user` (ou `npm run create-user -- --admin`). Se o e-mail já existir, a senha é redefinida.
+
+### Fly.io
+
+O `fly.toml` já está pronto (região São Paulo, volume para o SQLite, HTTPS forçado).
+Use **uma única máquina** — o SQLite não é compartilhado entre instâncias.
+
+```bash
+fly launch --copy-config --no-deploy          # troque o nome do app se "allfa-crm" já existir
+fly volumes create crm_data --size 1 --region gru
+fly deploy
+fly ssh console -C "su-exec node node scripts/create-user.js --admin"   # primeiro admin
+```
