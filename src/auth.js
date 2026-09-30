@@ -114,31 +114,54 @@ function requireCsrf(req, res, next) {
   next();
 }
 
-// ---------- Limite de tentativas de login (em memória) ----------
+// ---------- Limite de tentativas de login (gravado no banco) ----------
 
-function createLoginLimiter({ maxAttempts = 5, windowMs = 15 * 60 * 1000 } = {}) {
-  const attempts = new Map();
-  const keyFor = (ip, email) => `${ip}|${String(email).toLowerCase()}`;
+// Fica no SQLite para sobreviver a reinícios da máquina (o Fly.io para e liga a máquina sozinho).
+// Três contadores: IP+e-mail, só o e-mail (tentativas vindas de vários IPs contra uma conta)
+// e só o IP (um IP testando senhas em várias contas).
+function createLoginLimiter(db, {
+  windowMs = 15 * 60 * 1000,
+  maxPerIpEmail = 5,
+  maxPerEmail = 20,
+  maxPerIp = 30,
+} = {}) {
+  db.exec(`CREATE TABLE IF NOT EXISTS login_attempts (
+    key   TEXT PRIMARY KEY,
+    count INTEGER NOT NULL,
+    first INTEGER NOT NULL
+  )`);
+  const getStmt = db.prepare('SELECT count, first FROM login_attempts WHERE key = ?');
+  const upsertStmt = db.prepare(`
+    INSERT INTO login_attempts (key, count, first) VALUES (?, 1, ?)
+    ON CONFLICT(key) DO UPDATE SET
+      count = CASE WHEN excluded.first - first > ? THEN 1 ELSE count + 1 END,
+      first = CASE WHEN excluded.first - first > ? THEN excluded.first ELSE first END
+  `);
+  const deleteStmt = db.prepare('DELETE FROM login_attempts WHERE key = ?');
+  const purgeStmt = db.prepare('DELETE FROM login_attempts WHERE first < ?');
+
+  const keysFor = (ip, email) => {
+    const e = String(email).toLowerCase();
+    return [[`ie|${ip}|${e}`, maxPerIpEmail], [`e|${e}`, maxPerEmail], [`i|${ip}`, maxPerIp]];
+  };
 
   return {
     isBlocked(ip, email) {
-      const entry = attempts.get(keyFor(ip, email));
-      if (!entry) return false;
-      if (Date.now() - entry.first > windowMs) {
-        attempts.delete(keyFor(ip, email));
-        return false;
-      }
-      return entry.count >= maxAttempts;
+      const now = Date.now();
+      return keysFor(ip, email).some(([key, max]) => {
+        const row = getStmt.get(key);
+        return row && now - row.first <= windowMs && row.count >= max;
+      });
     },
     fail(ip, email) {
-      const key = keyFor(ip, email);
-      const entry = attempts.get(key);
-      if (!entry || Date.now() - entry.first > windowMs) attempts.set(key, { count: 1, first: Date.now() });
-      else entry.count += 1;
-      if (attempts.size > 10000) attempts.clear(); // proteção simples contra crescimento ilimitado
+      const now = Date.now();
+      purgeStmt.run(now - windowMs);
+      for (const [key] of keysFor(ip, email)) upsertStmt.run(key, now, windowMs, windowMs);
     },
     reset(ip, email) {
-      attempts.delete(keyFor(ip, email));
+      const [[ipEmail], [emailOnly]] = keysFor(ip, email);
+      deleteStmt.run(ipEmail);
+      deleteStmt.run(emailOnly);
     },
   };
 }

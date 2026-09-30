@@ -39,9 +39,14 @@ function createApp(db, { secureCookies = false, trustProxy = false } = {}) {
 
   app.use(securityHeaders(secureCookies));
   app.use(express.json({ limit: '32kb' }));
+  // Respostas da API têm dados de clientes: não devem ficar em cache do navegador ou de proxies.
+  app.use('/api', (_req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
+  });
   app.use(auth.loadSession(db));
 
-  const limiter = auth.createLoginLimiter();
+  const limiter = auth.createLoginLimiter(db);
   const cookieOpts = { secure: secureCookies, maxAgeMs: auth.SESSION_TTL_MS };
 
   // ---------- Autenticação ----------
