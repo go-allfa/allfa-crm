@@ -64,6 +64,27 @@ test('bloqueia após muitas tentativas de login', async () => {
   assert.equal((await login('ninguem@allfa.test', 'qualquer-coisa')).res.status, 429);
 });
 
+test('bloqueia uma conta atacada de vários IPs', async () => {
+  const { createLoginLimiter } = require('../src/auth');
+  const limiter = createLoginLimiter(openDatabase(':memory:'));
+  for (let i = 0; i < 20; i++) limiter.fail(`10.0.0.${i}`, 'alvo@allfa.test');
+  assert.equal(limiter.isBlocked('10.0.0.99', 'alvo@allfa.test'), true);
+  assert.equal(limiter.isBlocked('10.0.0.99', 'outra@allfa.test'), false);
+});
+
+test('bloqueia um IP testando várias contas', async () => {
+  const { createLoginLimiter } = require('../src/auth');
+  const limiter = createLoginLimiter(openDatabase(':memory:'));
+  for (let i = 0; i < 30; i++) limiter.fail('10.0.0.1', `conta${i}@allfa.test`);
+  assert.equal(limiter.isBlocked('10.0.0.1', 'nova@allfa.test'), true);
+  assert.equal(limiter.isBlocked('10.0.0.2', 'nova@allfa.test'), false);
+});
+
+test('respostas da API não ficam em cache', async () => {
+  const res = await fetch(`${base}/api/me`);
+  assert.equal(res.headers.get('cache-control'), 'no-store');
+});
+
 test('exige token CSRF para alterar dados', async () => {
   const { call } = await session();
   const res = await call('/leads', { method: 'POST', csrf: 'falso', body: { name: 'X', contact_method: 'LinkedIn' } });
